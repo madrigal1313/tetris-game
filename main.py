@@ -1,53 +1,33 @@
 import pygame
-import time
 import enum
 import os
 from typing import Union
 
-sizeScreen = 800
+gridPos = [(0, 0), (300, 700)] # (0, 3), (300,  700)
+interval = 60 # how many pixels per tetris square
+
 pygame.init()
-screen = pygame.display.set_mode([sizeScreen, sizeScreen])
-interval = sizeScreen / 10 # how many pixles per tetris square
+screen = pygame.display.set_mode([600, 700])
+screenRect = screen.get_rect()
+clock = pygame.time.Clock()
 
 class pieceShape(enum.Enum):
-  LONG = 0
-  T = 1
-  SQUARE = 2
-  Z_LEFT = 3
-  Z_RIGHT = 4
-  L_LEFT = 5
-  L_RIGHT = 6
-
-  @classmethod
-  def returnDrawShape(cls, shape) -> list:
-    pieceDrawMapPos = {
-      cls.SQUARE: [
-        (0, 0),
-        (20, 0),
-        (0, 20),
-        (20, 20)
-      ],
-      cls.LONG: [
-        ()
-      ]
-    }
-    return pieceDrawMapPos[shape]
-
-
-class PartialPiece(pygame.sprite.Sprite):
-  def __init__(self, attachedPieceGroup: pygame.sprite.Group, pos: Union[tuple, list], color: Union[tuple, list]) -> None:
-    pygame.sprite.Sprite.__init__(self)
-    self.image = pygame.Surface(list(pos))
-    self.image.fill(list(color))
-    self.rect = self.image.get_rect()
+  LONG = 'long.png'
+  T = 't.png'
+  SQUARE = 'square.png'
+  Z_LEFT = 'left_z.png'
+  Z_RIGHT = 'right_z.png'
+  L_LEFT = 'left_l.png'
+  L_RIGHT = 'right_l.png'
 
 class Piece:
   def __init__(self, shape: pieceShape) -> None:
-    self._group = pygame.sprite.Group()
+    self.x = 0
+    self.y = 0
     self.shape = shape
-    if shape == pieceShape.SQUARE:
-      pass
+    self.rotation = 0 #range from 0 to 3 and defines rotation state
 
+  # def rotate()
 
 class testpiece(pygame.sprite.Sprite):
   def __init__(self, picture, width, height, rotation, x = 250, y = 0):
@@ -59,10 +39,6 @@ class testpiece(pygame.sprite.Sprite):
     self.y = y
     self.rect = self.rect.move(x, y)
 
-
-
-
-
 testgroup = pygame.sprite.Group()
 
 #x = 275
@@ -71,30 +47,39 @@ r = 0
 addX = 0
 addY = 0
 
+def drawGrid():
+  for i in range(25): pygame.draw.line(screen, (0, 0, 0), (gridPos[0][0], i*28), (gridPos[1][0], i*28), width = 1) #hor
+  for i in range(1, 11): pygame.draw.line(screen, (0, 0, 0), (i*30, gridPos[0][1]), (i*30, gridPos[1][1]), width = 1) #ver
 
+newPiece = False
 
 while True:
-  rightL = testpiece('right_l.png', 140, 100, -90 * r, 400 + addX, 0 + addY)
-  square = testpiece('square.png', 90, 90, 0, 275, 300)
+  # clock.tick(5)
+  drawGrid()
+  
+  rightL = testpiece('right_l.png', 90, 60, -90 * r, 210 + addX, 0 + addY)
+  square = testpiece('square.png', 60, 60, 0, 30, 530)
   i = 1
+  
   for event in pygame.event.get():
     if event.type == pygame.QUIT: 
       break
+
     if event.type == pygame.KEYDOWN:
       if event.key == pygame.K_RIGHT:
         print("right")
-        if (rightL.x + 50) <= 500:
-          addX += 50
+        if (rightL.x + 30) <= 600:
+          addX += 30
         else:
-          while (rightL.x + i) <= 500:
+          while (rightL.x + i) <= 600:
             addX += 1
             i += 1
             print("heheha")
         print(rightL.x)
       elif event.key == pygame.K_LEFT:
         print("left")
-        if (rightL.x - 50) >= 0:
-          addX -= 50
+        if (rightL.x - 30) >= 0:
+          addX -= 30
           print("yay")
         else:
           while (rightL.x - i) >= 0:
@@ -106,16 +91,20 @@ while True:
       elif event.key == pygame.K_UP:
         print("up")
         r += 1
-  rightL.rect.clamp_ip(screen.get_rect())
+  
+  rightL.rect.clamp_ip(screenRect)
   testgroup.add(rightL, square)
   #for drawing in pygame.sprite.Group.sprites(testgroup):
     #print(drawing)
     #screen.blit(drawing.image, (drawing.x, drawing.y))
-  screen.fill((255, 255, 255)) # make backround white
   testgroup.draw(screen)
-  if not rightL.rect.colliderect(square):
+  if rightL.rect.colliderect(square):
+    rightL.rect.union_ip(square.rect)
+    newPiece = True
+  else:  
     addY += 5
   testgroup.empty()
-  pygame.display.update() # update screen
-  #screen.fill((255, 255, 255)) # make backround white
+
+  pygame.display.update()
+  screen.fill((255, 255, 255))
 pygame.quit()
